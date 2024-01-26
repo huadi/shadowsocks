@@ -18,20 +18,18 @@
 # from ssloop
 # https://github.com/clowwindy/ssloop
 
-from __future__ import absolute_import, division, print_function, \
-    with_statement
+from __future__ import absolute_import, division, print_function, with_statement
 
-import os
-import time
-import socket
-import select
-import traceback
 import errno
 import logging
+import os
+import select
+import socket
+import time
+import traceback
 from collections import defaultdict
 
 from shadowsocks import shell
-
 
 __all__ = ['EventLoop', 'POLL_NULL', 'POLL_IN', 'POLL_OUT', 'POLL_ERR',
            'POLL_HUP', 'POLL_NVAL', 'EVENT_NAMES']
@@ -42,7 +40,6 @@ POLL_OUT = 0x04
 POLL_ERR = 0x08
 POLL_HUP = 0x10
 POLL_NVAL = 0x20
-
 
 EVENT_NAMES = {
     POLL_NULL: 'POLL_NULL',
@@ -58,7 +55,6 @@ TIMEOUT_PRECISION = 10
 
 
 class KqueueLoop(object):
-
     MAX_EVENTS = 1024
 
     def __init__(self):
@@ -155,15 +151,16 @@ class EventLoop(object):
             self._impl = SelectLoop()
             model = 'select'
         else:
-            raise Exception('can not find any available functions in select '
-                            'package')
+            raise Exception('can not find any available functions in select package')
         self._fdmap = {}  # (f, handler)
+        """格式为：fd: (f, handler)，其中f为socket"""
         self._last_time = time.time()
         self._periodic_callbacks = []
         self._stopping = False
         logging.debug('using event model: %s', model)
 
     def poll(self, timeout=None):
+        """从epoll或者select中，拿到fd和event，再从fdmap中通过fd找到socket，组装成(socket, fd, event)"""
         events = self._impl.poll(timeout)
         return [(self._fdmap[fd][0], fd, event) for fd, event in events]
 
@@ -209,7 +206,7 @@ class EventLoop(object):
                     continue
 
             for sock, fd, event in events:
-                handler = self._fdmap.get(fd, None)
+                handler = self._fdmap.get(fd, None)  # handler中的数据结构是(socket, handler)
                 if handler is not None:
                     handler = handler[1]
                     try:
